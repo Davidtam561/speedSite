@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>בדיקת מהירות אינטרנט</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .speed-test {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .speed-item {
+            text-align: center;
+            flex: 1;
+        }
+        .speed-label {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress {
+            width: 0%;
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 0.5s ease-in-out;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        button:disabled {
+            background-color: #a0a0a0;
+            cursor: not-allowed;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .alert {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 5px;
+            color: #856404;
+        }
+        .version {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+        @media (max-width: 600px) {
+            .speed-test {
+                flex-direction: column;
+            }
+            .speed-item {
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>בדיקת מהירות אינטרנט</h1>
+        <div class="speed-test">
+            <div class="speed-item">
+                <div class="speed-label">הורדה</div>
+                <div class="progress-bar"><div id="downloadProgress" class="progress"></div></div>
+            </div>
+            <div class="speed-item">
+                <div class="speed-label">העלאה</div>
+                <div class="progress-bar"><div id="uploadProgress" class="progress"></div></div>
+            </div>
+            <div class="speed-item">
+                <div class="speed-label">פינג</div>
+                <div class="progress-bar"><div id="pingProgress" class="progress"></div></div>
+            </div>
+        </div>
+        <button id="startTest">התחל בדיקה</button>
+        <div id="results" class="results" style="display: none;"></div>
+        <div class="alert">
+            <strong>שים לב:</strong> ערך הפינג אינו קשור ישירות לאיכות חיבור האינטרנט שלך, אלא מושפע בעיקר מהמרחק הגיאוגרפי בינך לבין השרת של האתר.
+        </div>
+        <div class="version">גרסה: <span id="version">1.0.0</span></div>
+    </div>
+
+    <script>
+        const downloadProgress = document.getElementById('downloadProgress');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const pingProgress = document.getElementById('pingProgress');
+        const startButton = document.getElementById('startTest');
+        const resultsDiv = document.getElementById('results');
+        const versionSpan = document.getElementById('version');
+
+        let testInProgress = false;
+
+        startButton.addEventListener('click', startTest);
+
+        function startTest() {
+            if (testInProgress) return;
+            testInProgress = true;
+            startButton.disabled = true;
+            resetProgress();
+            runTest('download')
+                .then(() => runTest('upload'))
+                .then(() => runTest('ping'))
+                .then(showResults);
+        }
+
+        function runTest(type) {
+            return new Promise((resolve) => {
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 3;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(interval);
+                        resolve();
+                    }
+                    updateProgress(type, progress);
+                }, 50);
+            });
+        }
+
+        function updateProgress(type, value) {
+            const progressBar = document.getElementById(`${type}Progress`);
+            progressBar.style.width = `${value}%`;
+        }
+
+        function resetProgress() {
+            updateProgress('download', 0);
+            updateProgress('upload', 0);
+            updateProgress('ping', 0);
+            resultsDiv.style.display = 'none';
+        }
+
+        function showResults() {
+            const downloadSpeed = Math.random() * 100 + 50;
+            const uploadSpeed = Math.random() * 50 + 10;
+            const ping = Math.random() * 50 + 10;
+
+            resultsDiv.innerHTML = `
+                <h2>תוצאות הבדיקה</h2>
+                <p><strong>כתובת IP:</strong> ${getRandomIP()}</p>
+                <p><strong>מיקום השרת:</strong> ירושלים, ישראל</p>
+                <p><strong>מהירות הורדה:</strong> ${downloadSpeed.toFixed(2)} Mbps (${getSpeedRating(downloadSpeed, 'download')})</p>
+                <p><strong>מהירות העלאה:</strong> ${uploadSpeed.toFixed(2)} Mbps (${getSpeedRating(uploadSpeed, 'upload')})</p>
+                <p><strong>פינג:</strong> ${ping.toFixed(2)} ms</p>
+            `;
+            resultsDiv.style.display = 'block';
+            testInProgress = false;
+            startButton.disabled = false;
+        }
+
+        function getRandomIP() {
+            return `${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`;
+        }
+
+        function getSpeedRating(speed, type) {
+            if (type === 'download') {
+                if (speed < 10) return 'איטי מאוד';
+                if (speed < 30) return 'איטי';
+                if (speed < 60) return 'סביר';
+                if (speed < 100) return 'מהיר';
+                return 'מהיר מאוד';
+            } else {
+                if (speed < 5) return 'איטי מאוד';
+                if (speed < 15) return 'איטי';
+                if (speed < 30) return 'סביר';
+                if (speed < 50) return 'מהיר';
+                return 'מהיר מאוד';
+            }
+        }
+
+        // עדכון גרסה (לצורך הדגמה)
+        setInterval(() => {
+            const currentVersion = versionSpan.textContent.split('.');
+            currentVersion[2] = parseInt(currentVersion[2]) + 1;
+            versionSpan.textContent = currentVersion.join('.');
+        }, 60000); // עדכון כל דקה
+    </script>
+</body>
+</html>
